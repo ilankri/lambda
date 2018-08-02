@@ -24,10 +24,9 @@ expr:
   | e1 = expr op = binop e2 = expr { Lambda.binop op e1 e2 }
   | LPAREN e1 = expr COMMA e2 = expr RPAREN { Lambda.Pair (e1, e2) }
   | e1 = simple_expr e2 = simple_expr  { Lambda.App (e1, e2) }
-  | FUN x = id t = type_annot? BIG_ARROW e = expr
-    { Lambda.Abstr (x, t, e) }
+  | FUN x = id t = type_annot? BIG_ARROW e = expr { Lambda.Abstr (x, t, e) }
   | LET x = id t = type_annot? EQ e1 = expr IN e2 = expr
-    { Lambda.Let (x, t, e1, e2) }
+      { Lambda.Let (x, t, e1, e2) }
   | IF c = expr THEN e1 = expr ELSE e2 = expr { Lambda.if_then_else c e1 e2 }
 
 simple_expr:

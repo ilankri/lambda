@@ -18,10 +18,10 @@ let alphanum = letter | digit | '_'
 
 rule token = parse
   | newline
-    {
-      Lexing.new_line lexbuf;
-      token lexbuf
-    }
+      {
+        Lexing.new_line lexbuf;
+        token lexbuf
+      }
   | blank+ { token lexbuf }
   | eof { Parser.EOF }
   | "(" { Parser.LPAREN }
@@ -46,10 +46,10 @@ rule token = parse
   | "int" { Parser.INT }
   | "bool" { Parser.BOOL }
   | digit+ as i
-    {
-      try Parser.C_INT (int_of_string i) with
-      | Failure _ -> raise Invalid_integer_constant
-    }
+      {
+        try Parser.C_INT (int_of_string i) with
+        | Failure _ -> raise Invalid_integer_constant
+      }
   | "false" { Parser.C_BOOL false }
   | "true" { Parser.C_BOOL true }
   | alphanum+ as id { Parser.ID id }
