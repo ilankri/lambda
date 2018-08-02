@@ -11,9 +11,6 @@ let main () =
         |> W.w TypingEnvironment.empty
         |> Result.map (fun (t, _) -> Type.to_string t)
         |> Result.get_or_else Printexc.to_string
-        (* get_or_else *)
-        (*   (W.w TypingEnvironment.empty prog >|= fun (t, _) -> Type.to_string t) *)
-        (*   Printexc.to_string *)
       )
     with
     | e -> e |> Printexc.to_string |> print_endline
