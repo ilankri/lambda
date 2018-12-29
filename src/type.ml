@@ -5,64 +5,62 @@ type t =
   | Arrow of t * t
   | Prod of t * t
 
-type scheme = Scheme of Var.Set.t * t
-
 let ( --> ) t t' = Arrow (t, t')
 
 let ( *** ) t t' = Prod (t, t')
 
-let rec term_of_type = function
+let rec to_term = function
   | Int -> Term.Sym ("int", [])
   | Var x -> Term.Var x
   | Bool -> Term.Sym ("bool", [])
-  | Arrow (t, t') -> Term.Sym ("arrow", List.map term_of_type [t; t'])
-  | Prod (t, t') -> Term.Sym ("prod", List.map term_of_type [t; t'])
+  | Arrow (t, t') -> Term.Sym ("arrow", List.map to_term [t; t'])
+  | Prod (t, t') -> Term.Sym ("prod", List.map to_term [t; t'])
 
-let rec type_of_term = function
+let rec from_term = function
   | Term.Var x -> Var x
   | Term.Sym ("int", []) -> Int
   | Term.Sym ("bool", []) -> Bool
-  | Term.Sym ("arrow", [t; t']) -> Arrow (type_of_term t, type_of_term t')
-  | Term.Sym ("prod", [t; t']) -> Prod (type_of_term t, type_of_term t')
+  | Term.Sym ("arrow", [t; t']) -> Arrow (from_term t, from_term t')
+  | Term.Sym ("prod", [t; t']) -> Prod (from_term t, from_term t')
   | Term.Sym _ -> assert false
 
-let unify t t' = Unification.unify [(term_of_type t, term_of_type t')]
+let unify t t' = Unification.unify [(to_term t, to_term t')]
 
 let apply_subst subst t =
-  t |> term_of_type |> Substitution.apply subst |> type_of_term
+  t |> to_term |> Substitution.apply subst |> from_term
 
-(* Beware of variable capture!  *)
-let apply_subst_s subst (Scheme (vars, t)) =
-  Scheme (
-    vars,
-    t |> term_of_type |> Substitution.apply subst |> type_of_term
-  )
+let fresh_var () = Var (Var.fresh ())
 
-let fresh_var' =
-  let c = ref 0 in
-  fun () ->
-    incr c;
-    Var.make ("t" ^ string_of_int !c)
+let vars (t : t) = t |> to_term |> Term.vars
 
-let fresh_var () = Var (fresh_var' ())
+let to_string t = t |> to_term |> Term.to_string
 
-let instantiate (Scheme (vars, t)) : t =
-  Var.Set.fold (fun var t ->
-      t |> apply_subst (Substitution.make var (Term.Var (fresh_var' ())))
+module Scheme = struct
+  type type_ = t
+  type t = Scheme of Var.Set.t * type_
+
+  let make vars t = Scheme (vars, t)
+
+  let instantiate (Scheme (vars, t)) : type_ =
+    Var.Set.fold (fun var t ->
+      apply_subst (Substitution.make var (Term.Var (Var.fresh ()))) t
     ) vars t
 
-let vars (t : t) = t |> term_of_type |> Term.vars
+  (* Beware of variable capture!  *)
+  let apply_subst subst (Scheme (vars, t)) =
+    make
+      vars
+      (t |> to_term |> Substitution.apply subst |> from_term)
 
-let free_vars (Scheme (vs, t)) = Var.Set.diff (vars t) vs
+  let free_vars (Scheme (vs, t)) = Var.Set.diff (vars t) vs
 
-let to_string t = t |> term_of_type |> Term.to_string
+  let to_string (Scheme (xs, t)) =
+    let vars =
+      match Var.Set.elements xs with
+      | [] -> ""
+      | xs -> "forall " ^ String.concat " " (List.map Var.to_string xs) ^ ". "
+    in
+    vars ^ (t |> to_term |> Term.to_string)
 
-let to_string_s (Scheme (xs, t)) =
-  let vars =
-    match Var.Set.elements xs with
-    | [] -> ""
-    | xs -> "forall " ^ String.concat " " (List.map Var.to_string xs) ^ ". "
-  in
-  vars ^ (t |> term_of_type |> Term.to_string)
-
-let monotype t = Scheme (Var.Set.empty, t)
+  let monotype t = make Var.Set.empty t
+end

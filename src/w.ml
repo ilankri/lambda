@@ -1,43 +1,43 @@
-let typeof (cst : Lambda.cst) : Type.scheme =
+let typeof (cst : Lambda.cst) : Type.Scheme.t =
   let open Type in
   match cst with
   | Lambda.Fst | Lambda.Snd ->
-      let alpha = Type.fresh_var' () in
-      let beta = Type.fresh_var' () in
+      let alpha = Var.fresh () in
+      let beta = Var.fresh () in
       let vars =
         Var.Set.union (Var.Set.singleton alpha) (Var.Set.singleton beta)
       in
       let alpha = Type.Var alpha in
       let beta = Type.Var beta in
-      Type.Scheme (
-        vars,
-        (alpha *** beta) --> if cst = Lambda.Fst then alpha else beta
-      )
+      Type.Scheme.make
+        vars
+        ((alpha *** beta) --> if cst = Lambda.Fst then alpha else beta)
   | Lambda.If_then_else ->
-      let alpha = Type.fresh_var' () in
+      let alpha = Var.fresh () in
       let vars = Var.Set.singleton alpha in
       let alpha = Type.Var alpha in
-      Type.Scheme (vars, (Type.Int *** (alpha *** alpha)) --> alpha)
+      Type.Scheme.make vars ((Type.Int *** (alpha *** alpha)) --> alpha)
   | Lambda.Fix ->
-      let alpha = Type.fresh_var' () in
+      let alpha = Var.fresh () in
       let vars = Var.Set.singleton alpha in
       let alpha = Type.Var alpha in
-      Type.Scheme (vars, (alpha --> alpha) --> alpha)
+      Type.Scheme.make vars ((alpha --> alpha) --> alpha)
   | Lambda.Add | Lambda.Mult | Lambda.Sub ->
-      Type.monotype ((Type.Int *** Type.Int) --> Type.Int)
-  | Lambda.C_bool _ -> Type.monotype Type.Bool
-  | Lambda.C_int _ -> Type.monotype Type.Int
+      Type.Scheme.monotype ((Type.Int *** Type.Int) --> Type.Int)
+  | Lambda.C_bool _ -> Type.Scheme.monotype Type.Bool
+  | Lambda.C_int _ -> Type.Scheme.monotype Type.Int
 
-let apply_subst_env s env = TypingEnvironment.map (Type.apply_subst_s s) env
+let apply_subst_env s env =
+  TypingEnvironment.map (Type.Scheme.apply_subst s) env
 
-let free_vars (env : Type.scheme TypingEnvironment.t) : Var.Set.t =
+let free_vars (env : Type.Scheme.t TypingEnvironment.t) : Var.Set.t =
   TypingEnvironment.fold (fun _ s acc ->
-      s |> Type.free_vars |> Var.Set.union acc
-    ) env Var.Set.empty
+    s |> Type.Scheme.free_vars |> Var.Set.union acc
+  ) env Var.Set.empty
 
-let generalize (t : Type.t) (env : Type.scheme TypingEnvironment.t) :
-  Type.scheme =
-  Type.Scheme (Var.Set.diff (Type.vars t) (free_vars env), t)
+let generalize (t : Type.t) (env : Type.Scheme.t TypingEnvironment.t) :
+  Type.Scheme.t =
+  Type.Scheme.make (Var.Set.diff (Type.vars t) (free_vars env)) t
 
 exception Unbound_identifier of Lambda.id
 
@@ -49,8 +49,8 @@ let rec w env expr =
       Result.of_option_or_else
         (fun () -> Unbound_identifier x)
         (TypingEnvironment.lookup env x)
-      >|= fun s -> (Type.instantiate s, Substitution.id)
-  | Lambda.Cst c -> Ok (typeof c |> Type.instantiate, Substitution.id)
+      >|= fun s -> (Type.Scheme.instantiate s, Substitution.id)
+  | Lambda.Cst c -> Ok (typeof c |> Type.Scheme.instantiate, Substitution.id)
   | Lambda.Pair (e, e') ->
       w env e >>= fun (b, rho_b) ->
       w (apply_subst_env rho_b env) e' >|= fun (c, rho_c) ->
@@ -65,9 +65,7 @@ let rec w env expr =
        Substitution.compose mu (Substitution.compose rho_c rho_b))
   | Lambda.Abstr (id, None, e) ->
       let alpha = Type.fresh_var () in
-      let env =
-        TypingEnvironment.bind id (Type.Scheme (Var.Set.empty, alpha)) env
-      in
+      let env = TypingEnvironment.bind id (Type.Scheme.monotype alpha) env in
       w env e >|= fun (b, rho) -> (Type.apply_subst rho alpha --> b, rho)
   | Lambda.Let (id, None, e, e') ->
       w env e >>= fun (b, rho_b) ->

@@ -6,8 +6,8 @@ let rec vars = function
   | Var x -> Var.Set.singleton x
   | Sym (_, ts) ->
       List.fold_left (fun acc t ->
-          t |> vars |> Var.Set.union acc
-        ) Var.Set.empty ts
+        t |> vars |> Var.Set.union acc
+      ) Var.Set.empty ts
 
 let rec to_string = function
   | Var x -> Var.to_string x
