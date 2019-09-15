@@ -1,0 +1,10 @@
+(env (_ (flags (:standard -w +a-4))))
+
+(ocamllex lexer)
+
+(menhir
+ (modules parser)
+ (flags --explain --strict))
+
+(executables
+ (names main substitution_test unification_test))

@@ -2,29 +2,22 @@ SHELL = /bin/sh
 RM = rm -f
 LN = ln -fs
 
-OCAMLBUILD = ocamlbuild -use-menhir
-DEBUGFLAG = -g
-OCAMLCFLAGS = -cflags $(DEBUGFLAG),-bin-annot,-w,+a-4
-OCAMLLFLAGS = -lflags $(DEBUGFLAG)
-MENHIRFLAGS = -yaccflags --explain,--strict
+DUNE = dune
 
 EXEC = lambda
-MAIN_TARGET = main.byte
-TARGETS = $(MAIN_TARGET) substitution_test.byte unification_test.byte
-
-build = $(OCAMLBUILD) $(OCAMLCFLAGS) $(OCAMLLFLAGS) $(MENHIRFLAGS)
-clean = $(OCAMLBUILD) -clean
+MAIN_TARGET = main.bc
+TARGETS = $(MAIN_TARGET) substitution_test.bc unification_test.bc
 
 .PHONY: all $(TARGETS) $(EXEC) clean
 
 all: $(TARGETS) $(EXEC)
 
 $(TARGETS):
-	$(build) $@
+	$(DUNE) build $(addprefix src/,$(TARGETS))
 
 $(EXEC): $(MAIN_TARGET)
-	$(LN) $< $(EXEC)
+	$(LN) _build/default/src/$< $(EXEC)
 
 clean:
-	$(clean)
+	$(DUNE) clean
 	$(RM) $(EXEC)

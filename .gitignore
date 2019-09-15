@@ -1,4 +1,6 @@
 _build/
-*.byte
-*.native
+*.bc
+*.exe
+.merlin
+
 /lambda
