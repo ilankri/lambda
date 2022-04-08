@@ -7,4 +7,5 @@
  (flags --explain --strict))
 
 (executables
+ (modes byte)
  (names main substitution_test unification_test))
