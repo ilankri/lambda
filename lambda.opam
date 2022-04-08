@@ -1,0 +1,11 @@
+opam-version: "2.0"
+synopsis: "A toy type checker"
+maintainer: "Idir Lankri <ilankri@protonmail.com>"
+authors: "Idir Lankri <ilankri@protonmail.com>"
+homepage: "https://gitlab.com/ilankri/lambda"
+bug-reports: "https://gitlab.com/ilankri/lambda/-/issues"
+depends: [
+  "ocaml" {>= "4.14.0" & < "4.15.0"}
+  "dune" {>= "3.0.3" & < "4.0.0"}
+  "menhir" {= "20220210"}
+]
