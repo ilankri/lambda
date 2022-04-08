@@ -1,4 +1,4 @@
-let main =
+let () =
   let vy = Var.make "y" in
   let vz = Var.make "z" in
   let y = Term.Var vy in

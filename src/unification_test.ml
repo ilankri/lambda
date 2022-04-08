@@ -35,7 +35,7 @@ let test2 () =
 
 let test3 () = test [(x, g x)]
 
-let main =
+let () =
   test1 ();
   print_newline ();
   test2 ();
